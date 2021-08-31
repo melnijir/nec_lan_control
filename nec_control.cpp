@@ -106,7 +106,7 @@ void fill_number(nec_data_t &buffer, uint16_t value) {
 }
 
 void check_answer() {
-    std::vector<uint8_t> buffer;
+    nec_data_t buffer;
     buffer.resize(nec_max_msg_len);
     auto rcv_len = ::read(dsp_socket, &buffer[0], buffer.size());
     if (rcv_len < 0) {
@@ -122,7 +122,7 @@ void check_answer() {
 }
 
 void send_standard_cmd(nec_command_t cmd, int value) {
-    std::vector<uint8_t> buffer;
+    nec_data_t buffer;
     auto command = nec_commands_list.find(cmd)->second;
     fill_buffer_start(buffer, command.msg_type, command.bytes.size()+nec_std_int_len+nec_stx_etx_len);
     buffer.insert(buffer.end(), command.bytes.begin(), command.bytes.end());
