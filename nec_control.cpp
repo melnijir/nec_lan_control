@@ -33,6 +33,10 @@ static const size_t nec_std_int_len = 4;    // Standard integer size (translated
 static const size_t nec_stx_etx_len = 2;    // STX and EXT size (2char bytes)
 static const size_t nec_dsp_timeout = 2;    // Maximal time in seconds for display to answer
 
+// Constants for commands described in the documentation
+static const size_t nec_cmd_val_power_on  = 1; 
+static const size_t nec_cmd_val_power_off = 4;
+
 static const std::map<nec_command_t, nec_request_t> nec_commands_list = {
     {nec_command_t::power,     {nec_message_t::command,       {0x43, 0x32, 0x30, 0x33, 0x44, 0x36}}},
     {nec_command_t::backlight, {nec_message_t::set_parameter, {0x30, 0x30, 0x31, 0x30            }}},
@@ -132,14 +136,6 @@ void send_standard_cmd(nec_command_t cmd, int value) {
     check_answer();
 }
 
-void send_power(bool on) {
-    send_standard_cmd(nec_command_t::power, on ? 1 : 4);
-}
-
-void send_backlight(int value) {
-    send_standard_cmd(nec_command_t::backlight, value);
-}
-
 int main(int argc, char *argv[]) {
     CLI::App nc_app("NEC CONTROL");
 
@@ -162,9 +158,9 @@ int main(int argc, char *argv[]) {
     try {
         connect(remote_ip, remote_port);
         if (verbose) std::cout << "connected." << std::endl;
-        if (power_state == "on")  send_power(true);
-        if (power_state == "off") send_power(false);
-        if (backlight > 0) send_backlight(backlight);
+        if (power_state == "on")  send_standard_cmd(nec_command_t::power, nec_cmd_val_power_on);
+        if (power_state == "off") send_standard_cmd(nec_command_t::power, nec_cmd_val_power_off);
+        if (backlight > 0) send_standard_cmd(nec_command_t::backlight, backlight);
         disconnect();
     } catch(const std::runtime_error& e) {
         std::cerr << "Not able to set the parameter: \"" << e.what() << "\"" << std::endl;
