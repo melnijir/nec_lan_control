@@ -13,7 +13,7 @@
 
 typedef std::vector<uint8_t> nec_data_t;
 
-enum nec_command_t { power, backlight };
+enum nec_command_t { power, backlight, brightness, color, color_temp, contrast, input };
 enum nec_message_t {
     command             = 'A',
     command_reply       = 'B',
@@ -38,8 +38,13 @@ static const size_t nec_cmd_val_power_on  = 1;
 static const size_t nec_cmd_val_power_off = 4;
 
 static const std::map<nec_command_t, nec_request_t> nec_commands_list = {
-    {nec_command_t::power,     {nec_message_t::command,       {0x43, 0x32, 0x30, 0x33, 0x44, 0x36}}},
-    {nec_command_t::backlight, {nec_message_t::set_parameter, {0x30, 0x30, 0x31, 0x30            }}},
+    {nec_command_t::power,      {nec_message_t::command,       {0x43, 0x32, 0x30, 0x33, 0x44, 0x36}}},
+    {nec_command_t::backlight,  {nec_message_t::set_parameter, {0x30, 0x30, 0x31, 0x30            }}},
+    {nec_command_t::brightness, {nec_message_t::set_parameter, {0x30, 0x30, 0x39, 0x32            }}},
+    {nec_command_t::color,      {nec_message_t::set_parameter, {0x30, 0x32, 0x31, 0x66            }}},
+    {nec_command_t::color_temp, {nec_message_t::set_parameter, {0x30, 0x30, 0x35, 0x34            }}},
+    {nec_command_t::contrast,   {nec_message_t::set_parameter, {0x30, 0x30, 0x31, 0x32            }}},
+    {nec_command_t::input,      {nec_message_t::set_parameter, {0x30, 0x30, 0x36, 0x30            }}},
 };
 
 int dsp_socket;
@@ -142,14 +147,19 @@ int main(int argc, char *argv[]) {
     std::string remote_ip   = "10.0.0.240";
     std::string remote_port = "7142";
     std::string power_state;
-    int backlight = -1;
+    int backlight = -1, brightness = -1, color = -1, color_temp = -1, contrast = -1, input = -1;
     bool verbose = false;
 
     nc_app.add_option("-a,--address,address", remote_ip, "Address to connect to.");
     nc_app.add_option("--port", remote_port, "Port to connect to.");
-    nc_app.add_option("-p,--power", power_state, "Set power to on or off.")->check(CLI::IsMember(std::set<std::string>({"on", "off"})));
-    nc_app.add_option("-b,--backlight", backlight, "Set backlight to a specific value.")->check(CLI::Range(0,100));
     nc_app.add_flag("-v,--verbose", verbose, "Speak more to me.");
+    nc_app.add_option("-p,--power",   power_state, "Set power to on or off.")->check(CLI::IsMember(std::set<std::string>({"on", "off"})));
+    nc_app.add_option("--backlight",  backlight, "Set backlight to a specific value.")->check(CLI::Range(0,100));
+    nc_app.add_option("--brightness", brightness, "Set contrast to a specific value.")->check(CLI::Range(0,100));
+    nc_app.add_option("--color",      color, "Set color to a specific value.")->check(CLI::Range(0,100));
+    nc_app.add_option("--color_temp", color_temp, "Set color temperature to a specific value.")->check(CLI::Range(0,74));
+    nc_app.add_option("--contrast",   contrast, "Set contrast to a specific value.")->check(CLI::Range(0,100));
+    nc_app.add_option("--input",      input, "Set input to a specific value.")->check(CLI::Range(0,17));
 
     CLI11_PARSE(nc_app, argc, argv);
 
@@ -160,7 +170,12 @@ int main(int argc, char *argv[]) {
         if (verbose) std::cout << "connected." << std::endl;
         if (power_state == "on")  send_standard_cmd(nec_command_t::power, nec_cmd_val_power_on);
         if (power_state == "off") send_standard_cmd(nec_command_t::power, nec_cmd_val_power_off);
-        if (backlight > 0) send_standard_cmd(nec_command_t::backlight, backlight);
+        if (backlight > 0)  send_standard_cmd(nec_command_t::backlight, backlight);
+        if (brightness > 0) send_standard_cmd(nec_command_t::brightness, brightness);
+        if (color > 0)      send_standard_cmd(nec_command_t::color, color);
+        if (color_temp > 0) send_standard_cmd(nec_command_t::color_temp, color_temp);
+        if (contrast > 0)   send_standard_cmd(nec_command_t::contrast, contrast);
+        if (input > 0)      send_standard_cmd(nec_command_t::input, input);
         disconnect();
     } catch(const std::runtime_error& e) {
         std::cerr << "Not able to set the parameter: \"" << e.what() << "\"" << std::endl;
